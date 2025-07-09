@@ -1,0 +1,79 @@
+import numpy as np  
+import pandas as pd
+from matplotlib import pyplot as plt
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier,plot_tree
+from sklearn import metrics
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+import warnings
+warnings.filterwarnings('ignore')
+
+
+path = 'https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-ML0101EN-SkillsNetwork/labs/Module%203/data/drug200.csv'
+my_data = pd.read_csv(path)
+print(my_data.sample(7))
+#basic analytics about our dataset types 
+# print(my_data.info())
+
+#convert our categorical data into numerical so can train our data(remember we always need to convert numerical for training)
+
+label_encoder = LabelEncoder()
+my_data['Sex'] = label_encoder.fit_transform(my_data['Sex'])
+my_data['BP'] = label_encoder.fit_transform(my_data['BP'])
+my_data['Cholesterol'] = label_encoder.fit_transform(my_data['Cholesterol'])
+
+#analytic after converting our dataset
+print("our data info: ",my_data.info())
+
+custom_map = {'drugA': 0, 'drugB': 1, 'drugC':2, 'drugX': 3,'drugY':4}
+my_data['Drug_num'] = my_data['Drug'].map(custom_map)
+print(my_data)
+
+print(my_data.drop('Drug',axis=1).corr()['Drug_num'])
+
+
+#distribution of datasey by plotting count of the records of the drug 
+category_counts = my_data['Drug'].value_counts()
+print('category counts lol', category_counts)
+
+#plot the count plot
+plt.bar(category_counts.index,category_counts.values, color='pink')
+plt.xlabel('Drug')
+plt.ylabel('Countooooo')
+plt.title('Category distribution')
+plt.xticks(rotation=90)  # Rotate labels for better readability if needed
+# plt.show()
+
+
+#seperate target variable from input variable
+X = my_data.drop(['Drug','Drug_num'],axis=1)
+y = my_data['Drug']
+
+#not use train-test-split function to seperate training data from testing data.Remember you need testing for preventing overfitting
+X_train,X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,random_state=32)
+
+#not let is create instance of DecisiionTree variable and train it with training data 
+drug_tree = DecisionTreeClassifier(criterion='entropy',max_depth=4)
+#this is the magic lol
+drug_tree.fit(X_train,y_train)
+
+#now we trained decision tree
+#let's generate predictions on the test set 
+tree_predictions = drug_tree.predict(X_test)
+print('accuracy of decision trees: ',metrics.accuracy_score(y_test,tree_predictions))
+
+plot_tree(drug_tree)
+# plt.show()  
+
+
+#if max depth reduced to 2 how would accuracy be 
+drug_tree2 = DecisionTreeClassifier(criterion='entropy',max_depth=2)
+
+#train the model on known inputs and outputs
+drug_tree2.fit(X_train,y_train)
+#use the model to guess outputs for new inputs
+drug_tree2_predictions = drug_tree2.predict(X_test)
+#then compare guesses to answer actual answers to measure performance
+print("Max depth two accuracy: ",metrics.accuracy_score(y_test,drug_tree2_predictions))
