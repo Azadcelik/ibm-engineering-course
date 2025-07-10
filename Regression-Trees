@@ -1,0 +1,57 @@
+from __future__ import print_function
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
+from sklearn.metrics import mean_squared_error
+from sklearn.tree import DecisionTreeRegressor
+import ssl
+import warnings
+warnings.filterwarnings('ignore')
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
+
+url = 'https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/pu9kbeSaAtRZ7RxdJKX9_A/yellow-tripdata.csv'
+taxi_data = pd.read_csv(url)
+# print(taxi_data.sample(9))
+
+correlation_values =taxi_data.corr()['tip_amount'].drop('tip_amount')
+correlation_values.plot(kind='barh', figsize=(10, 6))
+# plt.show()
+
+#extract the label from dataframe
+y = taxi_data[['tip_amount']].values.astype('float32')
+
+#drop the target variable from future matrix 
+proc_data = taxi_data.drop(['tip_amount'],axis=1)
+print('data after drop',proc_data)
+X = proc_data.values
+print('values of data',X)
+
+
+#split data data for train and test
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,random_state=42)
+
+#assign instance of decision-tree-regressor variable for train
+dt_reg = DecisionTreeRegressor(criterion='squared_error',max_depth=8,random_state=35)
+
+#train our model
+dt_reg.fit(X_train,y_train)
+
+#run inference using the sklearn model
+y_pred = dt_reg.predict(X_test)
+
+#evaluate mean squared error on test dataset
+mse_score = mean_squared_error(y_test,y_pred)
+print('MSE score : {0:.3f}'.format(mse_score))
+
+
+r2_score = dt_reg.score(X_test,y_test)
+print('R^2 score : {0:.3f}'.format(r2_score))
+
+#identify top 3 features with the most effect on tip_amount 
+corelation_values = taxi_data.corr()['tip_amount'].drop('tip_amount')
+print('top three most effecting tip',abs(corelation_values).sort_values(ascending=False)[:3])
